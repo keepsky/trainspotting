@@ -163,7 +163,7 @@ fn plan_coast_brake_intersection(start: Point,
     let brake_dx = (start.v * start.v - restriction.v * restriction.v) / (2.0 * brk);
     let brake_dt = (start.v - restriction.v) / brk;
     let coast_dx = restriction.dx - brake_dx;
-    let coast_dt = coast_dx / start.v;
+    let coast_dt = if start.v == 0.0 { std::f64::INFINITY } else { coast_dx / start.v };
 
     (Point {
          // Coast to
