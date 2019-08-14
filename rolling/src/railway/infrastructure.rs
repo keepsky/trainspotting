@@ -16,10 +16,10 @@ use railway::{Sim, Proc};
 //
 
 pub trait TrainVisitable {
-    fn arrive_front(&self) -> Option<Box<Proc>> {
+    fn arrive_front(&self, _node_id :NodeId, _train_id :usize) -> Option<Box<Proc>> {
         None
     }
-    fn arrive_back(&self) -> Option<Box<Proc>> {
+    fn arrive_back(&self, _node_id :NodeId, _train_id :usize) -> Option<Box<Proc>> {
         None
     }
 }
@@ -76,8 +76,8 @@ impl<'a> Process<Infrastructure<'a>> for MoveSwitch {
 
 #[derive(Copy, Clone)]
 enum DetectEvent {
-    Enter(ObjectId),
-    Exit(ObjectId),
+    Enter(ObjectId, NodeId, usize),
+    Exit(ObjectId, NodeId, usize),
 }
 
 impl<'a> Process<Infrastructure<'a>> for DetectEvent {
@@ -85,20 +85,20 @@ impl<'a> Process<Infrastructure<'a>> for DetectEvent {
         let infstate = &mut sim.world.state;
         let scheduler = &mut sim.scheduler;
         match *self {
-            DetectEvent::Enter(obj) => {
+            DetectEvent::Enter(obj, node, train) => {
                 match infstate[obj] {
                     ObjectState::TVDSection { ref mut occupied, .. } => {
                         occupied.set(scheduler, true);
-                        (sim.world.logger)(InfrastructureLogEvent::Occupied(obj, true));
+                        (sim.world.logger)(InfrastructureLogEvent::Occupied(obj, true, node, train));
                     }
                     _ => panic!("Not a TVD section"),
                 }
             }
-            DetectEvent::Exit(obj) => {
+            DetectEvent::Exit(obj, node, train) => {
                 match infstate[obj] {
                     ObjectState::TVDSection { ref mut occupied, .. } => {
                         occupied.set(scheduler, false);
-                        (sim.world.logger)(InfrastructureLogEvent::Occupied(obj, false));
+                        (sim.world.logger)(InfrastructureLogEvent::Occupied(obj, false, node, train));
                     }
                     _ => panic!("Not a TVD section"),
                 }
@@ -109,11 +109,11 @@ impl<'a> Process<Infrastructure<'a>> for DetectEvent {
 }
 
 impl TrainVisitable for StaticObject {
-    fn arrive_front(&self) -> Option<Box<Proc>> {
+    fn arrive_front(&self, node_id :NodeId, train_id :usize) -> Option<Box<Proc>> {
         match *self {
             StaticObject::TVDLimit { enter, .. } => {
                 match enter {
-                    Some(tvd) => Some(Box::new(DetectEvent::Enter(tvd))),
+                    Some(tvd) => Some(Box::new(DetectEvent::Enter(tvd, node_id, train_id))),
                     _ => None,
                 }
             }
@@ -121,11 +121,11 @@ impl TrainVisitable for StaticObject {
         }
     }
 
-    fn arrive_back(&self) -> Option<Box<Proc>> {
+    fn arrive_back(&self, node_id :NodeId, train_id :usize) -> Option<Box<Proc>> {
         match *self {
             StaticObject::TVDLimit { exit, .. } => {
                 match exit {
-                    Some(tvd) => Some(Box::new(DetectEvent::Exit(tvd))),
+                    Some(tvd) => Some(Box::new(DetectEvent::Exit(tvd, node_id, train_id))),
                     _ => None,
                 }
             }

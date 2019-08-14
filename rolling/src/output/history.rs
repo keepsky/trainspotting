@@ -1,6 +1,7 @@
 use input::staticinfrastructure::{SwitchPosition, InfNames};
 use railway::dynamics::{DriverAction, DistanceVelocity, TrainParams};
 use failure;
+use input::staticinfrastructure::NodeId;
 
 #[derive(Debug)]
 pub struct History {
@@ -25,7 +26,7 @@ pub enum InfrastructureLogEvent {
     Route(usize,RouteStatus), // TODO route identification is wrong?
     Authority(usize, Option<f64>), // signal objectid
     Reserved(usize, bool), // tvd objectid
-    Occupied(usize, bool), // tvd objectid
+    Occupied(usize, bool, NodeId, usize), // tvd objectid
     Position(usize, SwitchPosition), // switch objectid
 }
 

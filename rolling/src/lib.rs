@@ -121,8 +121,10 @@ pub fn evaluate_plan<RouteRef : Hash + Eq + Debug + Clone >
                     //println!(" --- {:?}", i);
                     train_log.borrow_mut().push(i);
                 });
+
+                let train_id = train_logs.len()-1;
                 let driver = Box::new(
-                    railway::driver::Driver::new(&mut sim, activated, node_idx, auth_dist, 
+                    railway::driver::Driver::new(&mut sim, train_id, activated, node_idx, auth_dist, 
                           *params, logger, timestep));
                 sim.start_process(driver);
             }

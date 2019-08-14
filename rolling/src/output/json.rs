@@ -114,7 +114,7 @@ pub fn json_history<W: io::Write>(inf: &StaticInfrastructure,
                   get(&names.object_names, n),
                   if x { "true" } else { "false" });
             }
-            Occupied(n, x) => {
+            Occupied(n, x, _node, _train) => {
                 if first {
                     first = false;
                 } else {

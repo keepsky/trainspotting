@@ -26,6 +26,7 @@ struct Train {
 }
 
 pub struct Driver {
+    id :usize,
     train: Train,
     authority: f64,
     step: (DriverAction, f64),
@@ -37,6 +38,7 @@ pub struct Driver {
 
 impl Driver {
     pub fn new(sim: &mut Sim,
+               id :usize,
                activated: EventId,
                node: NodeId,
                auth: f64,
@@ -54,6 +56,7 @@ impl Driver {
         };
 
         let d = Driver {
+            id: id,
             train: train,
             authority: auth - 20.0,
             step: (DriverAction::Coast, *sim.time()),
@@ -77,7 +80,7 @@ impl Driver {
     fn goto_node(&mut self, sim: &mut Sim, node: NodeId) {
         //println!("TRAIN goto node {}", node);
         for obj in sim.world.statics.nodes[node].objects.clone() {
-            if let Some(p) = sim.world.statics.objects[obj].arrive_front() {
+            if let Some(p) = sim.world.statics.objects[obj].arrive_front(node, self.id) {
                 sim.start_process(p);
             }
             self.arrive_front(sim, obj);
@@ -138,13 +141,14 @@ impl Driver {
         // the remembered authority is updated.
         self.authority -= update.dx;
 
+        let id = self.id;
         self.train.under_train.retain(|&mut (node, ref mut dist)| {
             *dist -= update.dx;
             if *dist < 1e-5 {
                 // Cleared a node.
                 
                 for obj in sim.world.statics.nodes[node].objects.clone() {
-                    if let Some(p) = sim.world.statics.objects[obj].arrive_back() {
+                    if let Some(p) = sim.world.statics.objects[obj].arrive_back(node, id) {
                         sim.start_process(p);
                     }
                 }
