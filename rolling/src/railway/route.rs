@@ -38,6 +38,13 @@ fn require_observable_bool_false(b :&Observable<bool>) -> Result<(), EventId> {
     Ok(())
 }
 
+fn require_observable_zero(b :&Observable<usize>) -> Result<(), EventId> {
+    if *b.get() != 0 {
+        return Err(b.event());
+    }
+    Ok(())
+}
+
 fn require_switch(s :ObjectId, inf :&Infrastructure) -> Result<(), EventId> {
     if let ObjectState::Switch { ref reserved, .. } = inf.state[s] {
         require_observable_bool_false(&reserved)?;
@@ -58,7 +65,7 @@ fn require_tvd(s :ObjectId, endpoint :Option<ObjectId>, inf :&Infrastructure) ->
             TVDReservation::Overlap(sig) => if Some(sig) != endpoint { return Err(reserved.event()); },
         };
 
-        require_observable_bool_false(&occupied)?;
+        require_observable_zero(&occupied)?;
     } else {
         panic!("Not a TVD.");
     }

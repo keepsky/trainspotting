@@ -35,7 +35,7 @@ pub enum ObjectState {
     },
     TVDSection {
         reserved: Observable<TVDReservation>,
-        occupied: Observable<bool>,
+        occupied: Observable<usize>,
     },
     TVDLimit,
 }
@@ -88,8 +88,11 @@ impl<'a> Process<Infrastructure<'a>> for DetectEvent {
             DetectEvent::Enter(obj, node, train) => {
                 match infstate[obj] {
                     ObjectState::TVDSection { ref mut occupied, .. } => {
-                        occupied.set(scheduler, true);
-                        (sim.world.logger)(InfrastructureLogEvent::Occupied(obj, true, node, train));
+                        let value = *occupied.get();
+                        occupied.set(scheduler, value + 1);
+                        if value == 0 {
+                            (sim.world.logger)(InfrastructureLogEvent::Occupied(obj, true, node, train));
+                        }
                     }
                     _ => panic!("Not a TVD section"),
                 }
@@ -97,8 +100,11 @@ impl<'a> Process<Infrastructure<'a>> for DetectEvent {
             DetectEvent::Exit(obj, node, train) => {
                 match infstate[obj] {
                     ObjectState::TVDSection { ref mut occupied, .. } => {
-                        occupied.set(scheduler, false);
-                        (sim.world.logger)(InfrastructureLogEvent::Occupied(obj, false, node, train));
+                        let value = *occupied.get();
+                        if value > 0 { occupied.set(scheduler, value - 1); }
+                        if value == 1 {
+                            (sim.world.logger)(InfrastructureLogEvent::Occupied(obj, false, node, train));
+                        }
                     }
                     _ => panic!("Not a TVD section"),
                 }
@@ -168,7 +174,7 @@ impl<'a> Infrastructure<'a> {
                 TVDSection => {
                     ObjectState::TVDSection {
                         reserved: Observable::new(scheduler, TVDReservation::Free),
-                        occupied: Observable::new(scheduler, false),
+                        occupied: Observable::new(scheduler, 0),
                     }
                 }
                 Switch { .. } => {
