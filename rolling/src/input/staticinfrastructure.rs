@@ -46,8 +46,8 @@ pub enum Edges {
 
 #[derive(Debug)]
 pub enum StaticObject {
-    Sight { distance: f64, signal: ObjectId },
-    Signal,
+    Sight { distance: f64, signal: ObjectId},
+    Signal { has_distant: bool },
     Switch {
         left_link: (NodeId, f64),
         right_link: (NodeId, f64),

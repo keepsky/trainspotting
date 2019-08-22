@@ -58,7 +58,7 @@ pub fn json_history<W: io::Write>(inf: &StaticInfrastructure,
         for obj in &node.objects {
             use staticinfrastructure::StaticObject;
             match inf.objects[*obj] {
-                StaticObject::Signal => {
+                StaticObject::Signal { .. } => {
                     if first { first = false; } else { write!(f, ", ")?; }
                     write!(f, " \"{}\": {{ \"type\":\"signal\", \"node\": \"{}\" }} ",
                            get(&names.object_names, *obj), get(&names.node_names, node_idx))?;

@@ -416,7 +416,8 @@ pub fn model_from_ast(stmts: &[Statement])
                                     let objs = &mut model.objects;
                                     *names.entry(name.to_string()).or_insert_with(|| {
                                         let idx = objs.len();
-                                        objs.push(staticinfrastructure::StaticObject::Signal);
+                                        objs.push(staticinfrastructure::StaticObject::Signal { has_distant: false });
+                                        // TODO allow input of distant signaling capability
                                         idx
                                     })
                                 };
@@ -435,7 +436,10 @@ pub fn model_from_ast(stmts: &[Statement])
                             Object::Signal(ref name) => {
                                 let idx = insert_object(&mut model.objects,
                                                         &mut names.object_names,
-                                                        staticinfrastructure::StaticObject::Signal,
+                                                        staticinfrastructure::StaticObject::Signal{
+                                                            has_distant: false,
+                                                        // TODO allow input of distant signaling capability
+                                                        },
                                                         name);
                                 let m: &mut staticinfrastructure::Node = &mut model.nodes[node];
                                 m.objects.push(idx);
