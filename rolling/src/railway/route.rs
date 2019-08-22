@@ -272,20 +272,22 @@ impl<'a> Process<Infrastructure<'a>> for ActivateRoute {
         // Set the signal to green
         match self.route.entry {
             RouteEntryExit::SignalTrigger { ref signal, ref trigger_section } => {
-                //println!("SIGNAL GREEN {:?}", self.route.entry);
-                match sim.world.state[*signal] {
-                    ObjectState::Signal { ref mut authority } => {
-                        let l = Some(self.route.length);
-                        authority.set(&mut sim.scheduler, l);
-                        (sim.world.logger)(InfrastructureLogEvent::Authority(*signal,l));
-                    }
-                    _ => panic!("Not a signal"),
+
+                let mut distant_sig = None;
+                if let RouteEntryExit::Signal(d) = &self.route.exit {
+                    if let Some(StaticObject::Signal { has_distant }) = sim.world.statics.objects.get(*signal) {
+                        if *has_distant {
+                            distant_sig = Some(*d);
+                        }
+                    } 
                 }
 
                 sim.start_process(Box::new(CatchSignal {
                     signal: *signal,
                     tvd: *trigger_section,
                     state: CatchSignalState::Start,
+                    distant_sig: distant_sig,
+                    route_length: self.route.length,
                 }));
            },
            _ =>  {},
@@ -348,28 +350,72 @@ struct CatchSignal {
     tvd: ObjectId,
     signal: ObjectId,
     state: CatchSignalState,
+    distant_sig: Option<ObjectId>,
+    route_length :f64,
 }
+impl CatchSignal {
+    fn set_auth(&self, sim :&mut Sim, auth :(Option<f64>,Option<f64>)) {
+        match sim.world.state[self.signal] {
+            ObjectState::Signal { ref mut authority } => {
+                authority.set(&mut sim.scheduler, auth);
+                (sim.world.logger)(InfrastructureLogEvent::Authority(self.signal,auth));
+            }
+            _ => panic!("Not a signal"),
+        }
+    }
+
+    fn get_distant(&self, sim :&mut Sim) -> Option<(Option<f64>, EventId)> {
+        self.distant_sig.and_then(|s| {
+            match sim.world.state[s] {
+                ObjectState::Signal { ref authority } => {
+                    Some((authority.get().0, authority.event()))
+                }, _ => panic!("not a signal"),
+            }
+        })
+    }
+
+    fn get_tvd_event(&self, sim :&mut Sim) -> EventId {
+        match sim.world.state[self.tvd] {
+            ObjectState::TVDSection { ref mut occupied, .. } => occupied.event(),
+            _ => panic!("Not a TVD section"),
+        }
+    }
+
+    fn was_tvd_triggered(&self, sim :&mut Sim) -> bool {
+        match sim.world.state[self.tvd] {
+            ObjectState::TVDSection { ref occupied, .. } => {
+                *occupied.get() > 0
+            }, _ => panic!("not a tvd section"),
+        }
+    }
+}
+
 
 impl<'a> Process<Infrastructure<'a>> for CatchSignal {
     fn resume(&mut self, sim: &mut Sim) -> ProcessState {
         match self.state {
             CatchSignalState::Start => {
-                let event = match sim.world.state[self.tvd] {
-                    ObjectState::TVDSection { ref mut occupied, .. } => occupied.event(),
-                    _ => panic!("Not a TVD section"),
-                };
                 self.state = CatchSignalState::AwaitTrigger;
-                ProcessState::Wait(SmallVec::from_slice(&[event]))
+                let tvd_event = self.get_tvd_event(sim);
+                if let Some((dist, dist_ev)) = self.get_distant(sim) {
+                    self.set_auth(sim, (Some(self.route_length), dist));
+                    ProcessState::Wait(SmallVec::from_slice(&[tvd_event, dist_ev]))
+                } else {
+                    self.set_auth(sim, (Some(self.route_length), None));
+                    ProcessState::Wait(SmallVec::from_slice(&[tvd_event]))
+                }
             }
             CatchSignalState::AwaitTrigger => {
-                match sim.world.state[self.signal] {
-                    ObjectState::Signal { ref mut authority } => {
-                        authority.set(&mut sim.scheduler, None);
-                        (sim.world.logger)(InfrastructureLogEvent::Authority(self.signal,None));
-                    }
-                    _ => panic!("Not a signal"),
-                };
-                ProcessState::Finished
+                if self.was_tvd_triggered(sim) {
+                    self.set_auth(sim, (None,None));
+                    ProcessState::Finished
+                } else {
+                    let tvd_event = self.get_tvd_event(sim);
+                    let (dist,dist_ev) = self.get_distant(sim).unwrap(); // must have distant
+                                            // to be woken up without tvd triggered.
+                    self.set_auth(sim, (Some(self.route_length), dist));
+                    ProcessState::Wait(SmallVec::from_slice(&[tvd_event, dist_ev]))
+                }
             }
         }
     }

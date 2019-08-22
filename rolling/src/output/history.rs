@@ -24,7 +24,7 @@ pub enum RouteStatus {
 pub enum InfrastructureLogEvent {
     Wait(f64),
     Route(usize,RouteStatus), // TODO route identification is wrong?
-    Authority(usize, Option<f64>), // signal objectid
+    Authority(usize, (Option<f64>, Option<f64>)), // signal objectid
     Reserved(usize, bool), // tvd objectid
     Occupied(usize, bool, NodeId, usize), // tvd objectid
     Position(usize, SwitchPosition), // switch objectid

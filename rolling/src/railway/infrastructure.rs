@@ -27,7 +27,9 @@ pub trait TrainVisitable {
 #[derive(Debug)]
 pub enum ObjectState {
     Sight,
-    Signal { authority: Observable<Option<f64>> },
+    Signal { 
+        authority: Observable<(Option<f64>, Option<f64>)>,
+    },
     Switch {
         position: Observable<Option<SwitchPosition>>,
         throwing: Option<ProcessId>,
@@ -168,7 +170,7 @@ impl<'a> Infrastructure<'a> {
             .map(|o| match *o {
                 Sight { .. } => ObjectState::Sight,
                 Signal { .. } => {
-                    ObjectState::Signal { authority: Observable::new(scheduler, None) }
+                    ObjectState::Signal { authority: Observable::new(scheduler, (None,None)) }
                 }
                 TVDLimit { .. } => ObjectState::TVDLimit,
                 TVDSection => {

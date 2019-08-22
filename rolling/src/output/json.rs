@@ -86,7 +86,7 @@ pub fn json_history<W: io::Write>(inf: &StaticInfrastructure,
                   t,
                   "signal",
                   get(&names.object_names, n),
-                  if x.is_some() { "green" } else { "red" });
+                  if x.0.is_some() { "green" } else { "red" });
             }
             Route(n, x) => {
                 if first {

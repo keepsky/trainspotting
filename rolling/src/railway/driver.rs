@@ -221,12 +221,12 @@ impl Driver {
             match sim.world.state[sig] {
                 ObjectState::Signal { ref authority } => {
                     match *authority.get() {
-                        Some(d) => {
+                        (Some(auth_dist), distant_sig) => {
                             //println!("Signal green in sight dist{} sigauth{} self.auth{}", dist, d, dist+d-20.0);
-                            self.authority = dist + d - 20.0;
+                            self.authority = dist + auth_dist + distant_sig.unwrap_or(0.0) - 20.0;
                             if self.authority < 0.0 { self.authority = 0.0; }
                         }
-                        None => {
+                        (None,_) => {
                             //println!("Signal red in sight dist{} self.auth{}", dist,dist-20.0);
                             self.authority = dist - 20.0;
                             if self.authority < 0.0 { self.authority = 0.0; }
