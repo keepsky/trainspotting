@@ -5,18 +5,18 @@ use log::*;
 use crate::input::*;
 use crate::solver::*;
 
-pub struct SignalOptimizer<'a> {
+pub struct SignalOptimizer {
     solver :Solver,
     active_signals :HashMap<SignalId, Bool>,
     states :Vec<Vec<State>>,
-    infrastructure :&'a Infrastructure,
-    usages :&'a [Usage],
+    infrastructure :Infrastructure,
+    usages :Box<[Usage]>,
     // current_signals :Option<HashSet<SignalId>>, // 
     last_signal_set_lit :Option<Bool>,
 }
 
-impl<'a> SignalOptimizer<'a> {
-    pub fn new(inf :&'a Infrastructure, usages :&'a [Usage]) -> SignalOptimizer<'a> {
+impl SignalOptimizer {
+    pub fn new(inf :Infrastructure, usages :Box<[Usage]>) -> SignalOptimizer {
         let mut solver = Solver::new();
 
         use std::iter::once;
@@ -170,7 +170,7 @@ impl<'a> SignalOptimizer<'a> {
                 return Some(SignalSet { 
                     solver: &mut self.solver,
                     states: &self.states,
-                    usages: self.usages,
+                    usages: &self.usages,
                     this_set_lit: this_set_lit,
                     signals: signals });
             } else {

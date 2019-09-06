@@ -60,7 +60,7 @@ pub enum StaticObject {
     TVDSection,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum SwitchPosition {
     Left,
     Right,
@@ -78,6 +78,13 @@ pub enum RouteEntryExit {
     Boundary(Option<NodeId>),
     Signal(ObjectId),
     SignalTrigger { signal: ObjectId, trigger_section: ObjectId },
+}
+
+impl RouteEntryExit {
+    pub fn is_boundary(&self) -> bool { match self {
+        RouteEntryExit::Boundary(_) => true,
+        _ => false,
+    } }
 }
 
 #[derive(Debug,Clone)]
