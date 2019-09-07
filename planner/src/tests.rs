@@ -196,7 +196,7 @@ fn test_overtake_optimize() {
     };
 
     let usages = vec![trains];
-    let mut opt = optimize::SignalOptimizer::new(&inf, &usages);
+    let mut opt = optimize::SignalOptimizer::new(inf, usages.into());
     {
         let x1 = opt.next_signal_set();
     }

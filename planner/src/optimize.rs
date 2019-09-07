@@ -12,7 +12,7 @@ pub struct SignalOptimizer {
     infrastructure :Infrastructure,
     usages :Box<[Usage]>,
     // current_signals :Option<HashSet<SignalId>>, // 
-    last_signal_set_lit :Option<Bool>,
+    last_signal_set_clause :Option<Vec<Bool>>,
 }
 
 impl SignalOptimizer {
@@ -34,7 +34,7 @@ impl SignalOptimizer {
             infrastructure: inf,
             usages,
             //current_signals: None,
-            last_signal_set_lit: None,
+            last_signal_set_clause: None,
         };
         //
         // add the first state
@@ -58,8 +58,8 @@ impl SignalOptimizer {
         let relative_cost :usize = 3;
 
         // If we have already found a set of signals, exclude that one
-        if let Some(prev) = self.last_signal_set_lit.take() {
-            self.solver.add_clause(once(!prev));
+        if let Some(prev) = self.last_signal_set_clause.take() {
+            self.solver.add_clause(prev);
         }
 
         // see if we can solve it now
@@ -156,9 +156,12 @@ impl SignalOptimizer {
                 // Get model
             if let Ok(model) = self.solver.solve_under_assumptions(
                     vec![sum_cost.lte_const(bound as isize)]) {
-
+                
                 let signals : HashMap<SignalId,bool> = self.active_signals.iter()
                     .map(|(sig,val)| (*sig, model.value(val))).collect();
+                let signals_lit = self.active_signals.iter()
+                    .map(|(_,val)| !*val).collect::<Vec<_>>();
+
                 let this_set_lit = self.solver.new_lit();
                 for (sig,v) in self.active_signals.iter() {
                     // this_set_lit implies that v has its current value
@@ -166,7 +169,7 @@ impl SignalOptimizer {
                                            if signals[sig] { *v } else { !*v }]);
                 }
 
-                self.last_signal_set_lit = Some(this_set_lit);
+                self.last_signal_set_clause = Some(signals_lit);
                 return Some(SignalSet { 
                     solver: &mut self.solver,
                     states: &self.states,
