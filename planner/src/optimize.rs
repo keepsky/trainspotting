@@ -13,6 +13,7 @@ pub struct SignalOptimizer {
     usages :Box<[Usage]>,
     // current_signals :Option<HashSet<SignalId>>, // 
     last_signal_set_clause :Option<Vec<Bool>>,
+    no_more_states: bool, // TODO allow adding more states after first finding a solution
 }
 
 impl SignalOptimizer {
@@ -35,6 +36,7 @@ impl SignalOptimizer {
             usages,
             //current_signals: None,
             last_signal_set_clause: None,
+            no_more_states: false,
         };
         //
         // add the first state
@@ -59,6 +61,7 @@ impl SignalOptimizer {
 
         // If we have already found a set of signals, exclude that one
         if let Some(prev) = self.last_signal_set_clause.take() {
+            println!("Excluding prev {:?}", prev);
             self.solver.add_clause(prev);
         }
 
@@ -88,13 +91,20 @@ impl SignalOptimizer {
                 info!("optimizer first solve successful at n={}, n_sig={}, n_det={}", self.states[0].len(), n_signals, n_detectors);
                 (n_signals,n_detectors)
             } else {
-                self.add_state();
-                continue 'next;
+                if self.no_more_states {
+                    println!("No more solutions to be found.");
+                    return None;
+                } else {
+                    println!("Adding state");
+                    self.add_state();
+                    continue 'next;
+                }
             };
 
             // TODO end state condition can be fixed here only if we know we won't add more states
             // later.
             self.solver.add_clause(vec![assumption]);
+            self.no_more_states = true;
 
 
             // try to optimize the number of signals
@@ -160,7 +170,9 @@ impl SignalOptimizer {
                 let signals : HashMap<SignalId,bool> = self.active_signals.iter()
                     .map(|(sig,val)| (*sig, model.value(val))).collect();
                 let signals_lit = self.active_signals.iter()
-                    .map(|(_,val)| !*val).collect::<Vec<_>>();
+                    .map(|(_,val)| if model.value(val) { !*val } else { *val }).collect::<Vec<_>>();
+                println!("Signals {:?}", signals.iter()
+                         .filter_map(|(k,b)| if *b { Some(k) } else { None }).collect::<Vec<_>>());
 
                 let this_set_lit = self.solver.new_lit();
                 for (sig,v) in self.active_signals.iter() {

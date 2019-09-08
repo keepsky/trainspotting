@@ -23,10 +23,10 @@ pub(crate) struct TrainsState {
 
 
 
-pub fn plan<F : Fn(&RoutePlan) -> bool>(config :&Config, 
+pub fn plan<F : FnMut(&RoutePlan) -> bool>(config :&Config, 
                                         infrastructure :&Infrastructure,
                                         usage :&Usage,
-                                        test :F) -> Option<RoutePlan> {
+                                        mut test :F) -> Option<RoutePlan> {
     let mut s = Solver::new();
     let mut failed_steps = None;
 
