@@ -98,7 +98,7 @@ pub(crate) fn mk_state(s :&mut Solver,
             infrastructure :&Infrastructure,
             usage :&Usage,
             active_signals: Option<&HashMap<SignalId, Bool>>,
-            ) -> State  {
+            ) -> State {
     use std::iter::{once};
 
     // Each partial route can be occupied by a train,

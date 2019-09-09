@@ -20,8 +20,8 @@ pub type VisitId = usize; // Index into Train.visits
 #[derive(Debug)]
 pub enum SignalId {
     Boundary,
-    ExternalId(usize),
-    Anonymous(usize),
+    Signal(usize),
+    Detector(usize),
 }
 
 impl SignalId {
@@ -29,11 +29,11 @@ impl SignalId {
         if let SignalId::Boundary = self { true } else { false }
     }
     pub fn is_signal(&self) -> bool {
-        if let SignalId::ExternalId(_) = self { true } else { false }
+        if let SignalId::Signal(_) = self { true } else { false }
     }
 
     pub fn is_anonymous(&self) -> bool {
-        if let SignalId::Anonymous(_) = self { true } else { false }
+        if let SignalId::Detector(_) = self { true } else { false }
     }
 }
 
