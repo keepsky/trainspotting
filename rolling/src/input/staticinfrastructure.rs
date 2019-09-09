@@ -109,6 +109,7 @@ pub struct Release {
     pub trigger: ObjectId,
     pub length: f64,
     pub resources: SmallVec<[ObjectId; 4]>,
+    pub end_node :Option<NodeId>,
 }
 
 #[derive(Debug,Clone)]

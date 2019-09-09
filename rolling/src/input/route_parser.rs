@@ -17,6 +17,7 @@ pub fn default_release(route :&mut Route) {
             resources.extend(&route.resources.sections);
             resources.extend(route.resources.switch_positions.iter().map(|&(a,_)| a));
             route.resources.releases.push(Release { 
+                end_node: None,
                 trigger: *trigger, 
                 length: route.length,
                 resources: resources.into() });
@@ -128,6 +129,7 @@ pub fn parse_resources(i :&mut usize, t: &[Token], objnames :&Map, nodenames: &M
         let resources = list(i, t, |i, t| lookup(objnames, &identifier(i, t)?))?;
         must_match(i, t, Token::BraceClose)?;
         releases.push(Release {
+            end_node: None,
             trigger: trigger,
             length: length,
             resources: resources.into(),
