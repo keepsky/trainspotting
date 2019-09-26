@@ -13,7 +13,7 @@ pub struct SignalOptimizer {
     usages :Box<[Usage]>,
     // current_signals :Option<HashSet<SignalId>>, // 
     last_signal_set_clause :Option<Vec<Bool>>,
-    no_more_states: bool, // TODO allow adding more states after first finding a solution
+    failed_states :usize,
 }
 
 impl SignalOptimizer {
@@ -37,9 +37,8 @@ impl SignalOptimizer {
             states: (0..usages.len()).map(|_| vec![]).collect(),
             infrastructure: inf,
             usages,
-            //current_signals: None,
+            failed_states: 0,
             last_signal_set_clause: None,
-            no_more_states: false,
         };
         //
         // add the first state
@@ -71,13 +70,14 @@ impl SignalOptimizer {
         // see if we can solve it now
         'next: loop {
             let all_end_state_conditions = self.states.iter()
-                .flat_map(|i| i.last().unwrap().trains.clone()) 
-                // TODO is this wrong when n_usages > 1 ??
-                .collect::<HashMap<TrainId, TrainsState>>();
+                .flat_map(|s| s.last().unwrap().trains.iter().map(|(_,ts)| ts));
 
-            let assumption = self.solver.and_literal(end_state_condition(&all_end_state_conditions));
+            let end_state = self.solver.and_literal(end_state_condition(all_end_state_conditions));
             let (n_signals, n_detectors) = 
-                if let Ok(model) = self.solver.solve_under_assumptions(vec![assumption]) {
+                if let Ok(model) = self.solver.solve_under_assumptions(vec![end_state]) {
+
+                self.failed_states = 0;
+
                 // the number of states (and the maximal design) works.
                 // Now it is time to optimize for the number of signals.
 
@@ -97,20 +97,18 @@ impl SignalOptimizer {
                 info!("optimizer first solve successful at n={}, n_sig={}, n_det={}", self.states[0].len(), n_signals, n_detectors);
                 (n_signals,n_detectors)
             } else {
-                if self.no_more_states {
-                    info!("No more solutions to be found.");
+                self.failed_states += 1;
+                if self.failed_states > 3 {
+                    info!("No more solutions found.");
                     return None;
-                } else {
-                    info!("Adding state");
-                    self.add_state();
-                    continue 'next;
                 }
+                info!("Adding state");
+                self.add_state();
+                continue 'next;
             };
 
             // TODO end state condition can be fixed here only if we know we won't add more states
             // later.
-            self.solver.add_clause(vec![assumption]);
-            self.no_more_states = true;
 
 
             // try to optimize the number of signals
@@ -142,7 +140,7 @@ impl SignalOptimizer {
                     let mid : usize = (lo + hi)/2;
                     info!("In optimize_signals: Solving with mid={}", mid);
                     if let Ok(model) = self.solver.solve_under_assumptions(
-                            vec![sum_cost.lte_const(mid as isize)]) {
+                            vec![end_state, sum_cost.lte_const(mid as isize)]) {
 
                         for (i,_) in self.usages.iter().enumerate() {
                             let schedule = mk_schedule(&self.states[i], &model);
@@ -155,7 +153,7 @@ impl SignalOptimizer {
                         hi = mid;
                         // TODO make this conditional for later increase 
                         // in the number of signals.
-                        self.solver.add_clause(vec![sum_cost.lte_const(mid as isize)]);
+                        //self.solver.add_clause(vec![sum_cost.lte_const(mid as isize)]);
                     }  else {
                         info!("Failed  l{} m{} h{}, setting l to m+1", lo, mid, hi);
                         lo = mid+1;
@@ -171,7 +169,7 @@ impl SignalOptimizer {
 
                 // Get model
             if let Ok(model) = self.solver.solve_under_assumptions(
-                    vec![sum_cost.lte_const(bound as isize)]) {
+                    vec![end_state, sum_cost.lte_const(bound as isize)]) {
                 
                 let signals : HashSet<SignalId> = self.active_signals.iter()
                     .filter_map(|(sig,val)| { if model.value(val) { Some(*sig) } else { None } }).collect();
@@ -190,6 +188,7 @@ impl SignalOptimizer {
                 self.last_signal_set_clause = Some(signals_lit);
                 return Some(SignalSet { 
                     solver: &mut self.solver,
+                    end_state: end_state,
                     states: &self.states,
                     infrastructure :&self.infrastructure,
                     usages: &self.usages,
@@ -207,6 +206,7 @@ impl SignalOptimizer {
 
 pub struct SignalSet<'a> {
     solver :&'a mut Solver, 
+    end_state :Bool,
     states :&'a Vec<Vec<State>>,
     usages :&'a [Usage],
     infrastructure :&'a Infrastructure,
@@ -229,10 +229,11 @@ impl<'a> SignalSet<'a> {
         debug!("getusage dispatch");
         //let usage_lit = self.solver.new_lit();
         let mut results = Vec::new();
-        while let Ok(model) = self.solver.solve_under_assumptions(vec![self.this_set_lit]) {
+        let mut assumptions = vec![self.end_state, self.this_set_lit];
+        while let Ok(model) = self.solver.solve_under_assumptions(assumptions.iter().cloned()) {
             let schedule = mk_schedule(states, &model);
             debug!("disallow schedule: {:?}", schedule);
-            disallow_schedule(&mut self.solver, vec![!self.this_set_lit], states, &schedule);
+            assumptions.extend(disallow_schedule(vec![!self.this_set_lit], states, &schedule));
             results.push(schedule);
         }
 

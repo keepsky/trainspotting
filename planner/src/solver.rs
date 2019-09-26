@@ -39,7 +39,7 @@ pub fn plan<F : FnMut(&RoutePlan) -> bool>(config :&Config,
     loop {
         info!("Solving with n={}.", states.len());
         if let Ok(model) = s.solve_under_assumptions(
-            end_state_condition(&states.last().unwrap().trains)) {
+            end_state_condition(states.last().unwrap().trains.iter().map(|(t,s)| s))) {
 
             let schedule = mk_schedule(&states, &model);
 
@@ -67,7 +67,7 @@ pub fn plan<F : FnMut(&RoutePlan) -> bool>(config :&Config,
             // User check: e.g. simulation
             if !test(&schedule) {
                 info!("User check failed.");
-                disallow_schedule(&mut s, vec![], &states, &schedule);
+                s.add_clause(disallow_schedule(vec![], &states, &schedule));
                 continue;
             }
             info!("User check suceeded, returning resulting plan.");
@@ -585,9 +585,9 @@ pub(crate) fn mk_schedule(states :&[State], model :&Model) -> RoutePlan {
     }).collect()
 }
 
-pub(crate) fn end_state_condition<'a>(trains :impl IntoIterator<Item = (&'a TrainId,&'a TrainsState)>) -> Vec<Bool> {
+pub(crate) fn end_state_condition<'a>(states :impl IntoIterator<Item = &'a TrainsState>)-> Vec<Bool> {
     let mut condition = Vec::new();
-    for (_,ts) in trains.into_iter() {
+    for ts in states.into_iter() {
         condition.push(ts.born_before);
         for v in &ts.visit_before { condition.push(*v); }
         for (_,v) in &ts.progress_before { condition.push(*v); }
@@ -614,7 +614,7 @@ pub(crate) fn disallow_loop(_s :&mut Solver, _loop_ :&Loop) {
 pub(crate) fn disallow_repeat(_s :&mut Solver, _repeat :&Repeat) {
 }
 
-pub(crate) fn disallow_schedule(s :&mut Solver, prefix :Vec<Bool>, states :&[State], plan :&RoutePlan) {
+pub(crate) fn disallow_schedule(prefix :Vec<Bool>, states :&[State], plan :&RoutePlan) -> Vec<Bool> {
 
     let mut clause = prefix;
     for (state,plan) in states.iter().zip(plan.iter()) {
@@ -624,6 +624,6 @@ pub(crate) fn disallow_schedule(s :&mut Solver, prefix :Vec<Bool>, states :&[Sta
         }
     }
 
-    s.add_clause(clause);
+    clause
 }
 

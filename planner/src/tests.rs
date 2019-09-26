@@ -50,7 +50,8 @@ fn too_many_states() {
     let s2 = mk_state(&mut s, Some(&s1), &inf, &trains, None);
     let states = vec![s1,s2];
 
-    let model = s.solve_under_assumptions(end_state_condition(&states.last().unwrap().trains)).unwrap();
+    let model = s.solve_under_assumptions(end_state_condition(
+            states.last().unwrap().trains.iter().map(|(_,ts)| ts))).unwrap();
     let plan = mk_schedule(&states, &model);
 
     assert_eq!(plan.len(), 2); // two steps
@@ -60,8 +61,19 @@ fn too_many_states() {
 
     assert_eq!(plan, vec![vec![((0,0), Some(0))],vec![((0,0), None)]]);
 
-    disallow_schedule(&mut s, vec![], &states, &plan);
-    let other_solution = s.solve_under_assumptions(end_state_condition(&states.last().unwrap().trains));
+    // Dissallowing using only the first state should eliminate the solution
+    s.add_clause(disallow_schedule(vec![], 
+                      &states[0..1],
+                      &plan[0..1].to_vec()));
+    let other_solution = s.solve_under_assumptions(end_state_condition(
+            states.last().unwrap().trains.iter().map(|(_,ts)| ts)));
+    assert!(other_solution.is_err());
+
+    // Disallowing using both states, as would be the default in plan/optimize,
+    // should also work the same.
+    s.add_clause(disallow_schedule(vec![], &states, &plan));
+    let other_solution = s.solve_under_assumptions(end_state_condition(
+            states.last().unwrap().trains.iter().map(|(_,ts)| ts)));
     assert!(other_solution.is_err());
 
 }
