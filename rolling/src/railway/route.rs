@@ -4,6 +4,7 @@ use smallvec::SmallVec;
 use input::staticinfrastructure::*;
 use super::infrastructure::*;
 use output::history::{InfrastructureLogEvent, RouteStatus};
+use log::*;
 
 enum ActivateRouteState {
     Queued, // Waiting for conflicting routes to activate first
@@ -236,7 +237,7 @@ impl<'a> Process<Infrastructure<'a>> for ActivateRoute {
                     allocate_resources(&self.route, sim);
                     if let Some(ref overlap) = overlap { 
                         if let RouteEntryExit::Signal(end) = self.route.exit {
-                            println!("ALLOCATING OVERLAP on {:?}", self.route);
+                            debug!("ALLOCATING OVERLAP on {:?}", self.route);
                             allocate_overlap(overlap, end, sim); 
                             if let RouteEntryExit::SignalTrigger { ref trigger_section, .. } = self.route.entry {
                                 if let Some(t) = overlap.timeout {

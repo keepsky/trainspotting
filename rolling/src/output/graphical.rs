@@ -1,3 +1,4 @@
+use log::*;
 
 use failure::Error;
 // use super::history;
@@ -43,7 +44,7 @@ pub enum GSNode {
 pub fn graphical(inf :&StaticInfrastructure, names :&InfNames<String>) -> Result<String,Error> {
     let boundaries = inf.nodes.iter().enumerate().filter_map(|(i,ref n)| { if let Edges::ModelBoundary = n.edges { return Some(i); } else { return None; }} ).collect::<Vec<_>>();
     let boundary = *boundaries.iter().nth(0).ok_or(GraphicalError::NoModelBoundary)?;
-    println!("Selected boundary {:?}", boundary);
+    info!("Selected boundary {:?}", boundary);
 
     // Selected boundary is now on "down" side of double node.
 
@@ -130,7 +131,7 @@ pub fn graphical(inf :&StaticInfrastructure, names :&InfNames<String>) -> Result
         }
     }
 
-    println!("DISTS {:?}", dists);
+    info!("DISTS {:?}", dists);
 
     let majornodes = nodes.iter().enumerate().filter_map(|(i,&(_,ref n))|
             if let GNode::Linear(_,_) = *n { None } else { Some(i.clone()) } ).collect::<Vec<_>>();
@@ -169,7 +170,7 @@ pub fn graphical(inf :&StaticInfrastructure, names :&InfNames<String>) -> Result
         let e2 = e.iter().zip(e.iter().skip(1)).map(|(a,b)| (g(*a).clone(),g(*b).clone(), dists[&(*a,*b)])).collect::<Vec<_>>();
         (e2,level)
     }).collect::<Vec<_>>();
-    println!("EDGES2 {:?}", edges2);
+    info!("EDGES2 {:?}", edges2);
 
     //let edges = edges.into_iter().map(|mut e| {
     //    let end = g(e.pop().unwrap()).clone();
@@ -184,7 +185,7 @@ pub fn graphical(inf :&StaticInfrastructure, names :&InfNames<String>) -> Result
     //    let mid = e.chunks(2).map(|x| (g(x[0]).clone(),g(x[1]).clone())).collect::<Vec<_>>();
     //    (start,end,mid)
     //}).collect::<Vec<_>>();
-    //println!("EDGES {:?}", edges.iter().map(|x| x.iter().map(|y| g(*y).clone()).collect::<Vec<_>>()).collect::<Vec<_>>());// .iter().map(|x| x.iter().map(|y| get(&inf.node_names,*y) ).collect::<Vec<_>>()).collect::<Vec<_>>());
+    //info!("EDGES {:?}", edges.iter().map(|x| x.iter().map(|y| g(*y).clone()).collect::<Vec<_>>()).collect::<Vec<_>>());// .iter().map(|x| x.iter().map(|y| get(&inf.node_names,*y) ).collect::<Vec<_>>()).collect::<Vec<_>>());
 
 
     // Remove linears

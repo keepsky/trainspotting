@@ -64,7 +64,7 @@ impl SignalOptimizer {
 
         // If we have already found a set of signals, exclude that one
         if let Some(prev) = self.last_signal_set_clause.take() {
-            println!("Excluding prev {:?}", prev);
+            info!("Excluding prev {:?}", prev);
             self.solver.add_clause(prev);
         }
 
@@ -97,10 +97,10 @@ impl SignalOptimizer {
                 (n_signals,n_detectors)
             } else {
                 if self.no_more_states {
-                    println!("No more solutions to be found.");
+                    info!("No more solutions to be found.");
                     return None;
                 } else {
-                    println!("Adding state");
+                    info!("Adding state");
                     self.add_state();
                     continue 'next;
                 }
@@ -139,7 +139,7 @@ impl SignalOptimizer {
 
                 'minimize: loop {
                     let mid : usize = (lo + hi)/2;
-                    println!("In optimize_signals: Solving with mid={}", mid);
+                    info!("In optimize_signals: Solving with mid={}", mid);
                     if let Ok(model) = self.solver.solve_under_assumptions(
                             vec![sum_cost.lte_const(mid as isize)]) {
 
@@ -150,13 +150,13 @@ impl SignalOptimizer {
                         }
 
                         // sucess, lower hi bound
-                        println!("Success l{} m{} h{}, setting h to m", lo, mid, hi);
+                        info!("Success l{} m{} h{}, setting h to m", lo, mid, hi);
                         hi = mid;
                         // TODO make this conditional for later increase 
                         // in the number of signals.
                         self.solver.add_clause(vec![sum_cost.lte_const(mid as isize)]);
                     }  else {
-                        println!("Failed  l{} m{} h{}, setting l to m+1", lo, mid, hi);
+                        info!("Failed  l{} m{} h{}, setting l to m+1", lo, mid, hi);
                         lo = mid+1;
                     }
 
@@ -196,7 +196,7 @@ impl SignalOptimizer {
                     signals: signals });
             } else {
                     //return Err(format!("In optimize_signals: SAT query failed unexpectedly."));
-                    println!("In optimize_signals: SAT query failed unexpectedly.");
+                    info!("In optimize_signals: SAT query failed unexpectedly.");
                     return None;
             };
 
@@ -239,7 +239,7 @@ impl<'a> SignalSet<'a> {
     }
 
     pub fn reduce_detectors(&mut self, usages_plans :&Vec<Vec<RoutePlan>>) -> HashSet<SignalId> {
-        println!("reduce_detectors");
+        info!("reduce_detectors");
         let mut reduce_solver = Solver::new();
 
         // Partial route boundary (i.e. detector) activation
@@ -311,18 +311,18 @@ impl<'a> SignalSet<'a> {
 
             'minimize: loop {
                 let mid : usize = (lo + hi)/2;
-                println!("In reduce_detectors: Solving with mid={}", mid);
+                info!("In reduce_detectors: Solving with mid={}", mid);
                 if let Ok(model) = reduce_solver.solve_under_assumptions(
                         vec![sum_cost.lte_const(mid as isize)]) {
 
                     // sucess, lower hi bound
-                    println!("Success l{} m{} h{}, setting h to m", lo, mid, hi);
+                    info!("Success l{} m{} h{}, setting h to m", lo, mid, hi);
                     hi = mid;
                     // TODO make this conditional for later increase 
                     // in the number of signals.
                     reduce_solver.add_clause(vec![sum_cost.lte_const(mid as isize)]);
                 }  else {
-                    println!("Failed  l{} m{} h{}, setting l to m+1", lo, mid, hi);
+                    info!("Failed  l{} m{} h{}, setting l to m+1", lo, mid, hi);
                     lo = mid+1;
                 }
 
@@ -339,7 +339,7 @@ impl<'a> SignalSet<'a> {
             let result = boundary_active.iter().filter_map(|(s,v)| {
                 if model.value(v) { Some(*s) } else { None }
             }).collect();
-            println!("Reduce detectors finished:  {:?}", result);
+            info!("Reduce detectors finished:  {:?}", result);
             result
         } else {
             panic!("reduce_detectors: inconsistent problem formulation");

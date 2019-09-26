@@ -1,5 +1,6 @@
 use super::staticinfrastructure::*;
 use super::parser_utils::*;
+use log::*;
 //use smallvec::SmallVec;
 
 use std::collections::HashMap;
@@ -23,7 +24,7 @@ pub fn default_release(route :&mut Route) {
                 resources: resources.into() });
             //println!("DEFAULT RELEASE: {:?}", route);
         },
-        None => println!("Warning: route has no sections."),
+        None => warn!("Warning: route has no sections."),
     }
 }
 
@@ -351,7 +352,7 @@ pub fn lexer(x: &mut Iterator<Item = char>) -> Result<Vec<Token>, LexerError> {
                 line += 1;
             }
             c => {
-                println!("Unexpected char \"{}\"",c.escape_debug());
+                error!("Unexpected char \"{}\"",c.escape_debug());
                 return Err(LexerError::UnexpectedChar {
                     i: line,
                     c: c.to_string(),

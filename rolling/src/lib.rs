@@ -1,3 +1,4 @@
+extern crate log;
 extern crate smallvec;
 extern crate ordered_float;
 extern crate regex;

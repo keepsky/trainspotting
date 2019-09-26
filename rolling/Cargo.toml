@@ -10,6 +10,8 @@ regex="*"
 structopt="*"
 failure="*"
 failure_derive="*"
+log = "0.4"
+
 
 [lib]
 crate-type=["rlib","staticlib"]

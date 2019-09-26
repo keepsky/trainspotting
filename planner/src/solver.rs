@@ -1,6 +1,7 @@
 use minisat::{*, symbolic::*};
 use std::collections::{HashMap, HashSet};
 use crate::input::*;
+use log::*;
 
 // State management types (private)
 
@@ -31,12 +32,12 @@ pub fn plan<F : FnMut(&RoutePlan) -> bool>(config :&Config,
     let mut failed_steps = None;
 
 
-    println!("Adding initial state");
+    info!("Adding initial state");
     let mut states = Vec::new();
     states.push(mk_state(&mut s, None, infrastructure, usage, None));
 
     loop {
-        println!("Solving with n={}.", states.len());
+        info!("Solving with n={}.", states.len());
         if let Ok(model) = s.solve_under_assumptions(
             end_state_condition(&states.last().unwrap().trains)) {
 
@@ -45,18 +46,18 @@ pub fn plan<F : FnMut(&RoutePlan) -> bool>(config :&Config,
             // Built-in checks:
             // Loop check
             if let Err(loop_) = loop_check(&schedule) {
-                println!("Loop check failed. Removing loop.");
+                info!("Loop check failed. Removing loop.");
                 disallow_loop(&mut s, &loop_);
                 continue;
             } 
-            println!("Loop check succeeded.");
+            info!("Loop check succeeded.");
             // Repeat check
             if let Err(repeat) = repeat_check(&infrastructure, &schedule) {
-                println!("Repeat check failed. Removing.");
+                info!("Repeat check failed. Removing.");
                 disallow_repeat(&mut s, &repeat);
                 continue;
             }
-            println!("Repeat check succeeded.");
+            info!("Repeat check succeeded.");
 
             // Keep looking for new solutions as if the current one
             // was sucesssful, even if the user-supplied test function 
@@ -65,24 +66,24 @@ pub fn plan<F : FnMut(&RoutePlan) -> bool>(config :&Config,
 
             // User check: e.g. simulation
             if !test(&schedule) {
-                println!("User check failed.");
+                info!("User check failed.");
                 disallow_schedule(&mut s, vec![], &states, &schedule);
                 continue;
             }
-            println!("User check suceeded, returning resulting plan.");
+            info!("User check suceeded, returning resulting plan.");
 
             // Everything is ok
             break Some(schedule);
 
         } else {
-            println!("No more plans for n={}", states.len());
+            info!("No more plans for n={}", states.len());
             let increase = match failed_steps {
                 None => states.len() < config.n_before,
                 Some(f) => f < config.n_after,
             };
             failed_steps = failed_steps.map(|x| x+1);
             if increase {
-                println!("Adding new state.");
+                info!("Adding new state.");
                 states.push(mk_state(&mut s, states.last(), infrastructure, usage, None));
                 continue;
             } else {
@@ -367,7 +368,7 @@ pub(crate) fn mk_state(s :&mut Solver,
                     let next_routes : Vec<_> = infrastructure.partial_routes.iter()
                         .filter(|(_,r_next)| r_next.entry == infrastructure.partial_routes[rn].exit)
                         .map(|(rn_next,_)| *rn_next).collect();
-                    //println!("alloc conflict {:?}", (rn,train_id));
+                    //info!("alloc conflict {:?}", (rn,train_id));
                     let conflict_resolved = resolve_conflict_with(s, &infrastructure.partial_routes,
                           &infrastructure.elementary_routes, *train_id, 
                           &prev_state.infrastructure, &inf_state,
@@ -471,7 +472,7 @@ pub(crate) fn mk_state(s :&mut Solver,
         s.add_clause(vec![v2_future, !v1_future]);
     }
 
-    //println!("mk_state: Trains state {:?}", trains_state);
+    //info!("mk_state: Trains state {:?}", trains_state);
     State { infrastructure: inf_state, trains: trains_state }
 }
 
@@ -490,7 +491,7 @@ fn resolve_conflict_with(s :&mut Solver,
 
     let mut result = Vec::new();
 
-    //println!("resolve_conflict_with {:?}", candidates);
+    //info!("resolve_conflict_with {:?}", candidates);
 
     for next_route in candidates {
         let elementary_route :&HashSet<PartialRouteId> = problem_elementary_routes.iter()
@@ -498,7 +499,7 @@ fn resolve_conflict_with(s :&mut Solver,
         let elementary_and_overlap = elementary_route.iter()
             .flat_map(move |r| (0..problem_partial_routes[r].conflicts.len()).map(move |i| (r,i)));
 
-        //println!("    elementary_and_overlap {:?}", elementary_and_overlap);
+        //info!("    elementary_and_overlap {:?}", elementary_and_overlap);
 
         for (new_route,new_overlap) in elementary_and_overlap {
             // parts of a new route and overlap which we want to allocate,
@@ -618,7 +619,7 @@ pub(crate) fn disallow_schedule(s :&mut Solver, prefix :Vec<Bool>, states :&[Sta
     let mut clause = prefix;
     for (state,plan) in states.iter().zip(plan.iter()) {
         for (r,v) in plan.iter() {
-            //println!("Disallow {:?} {:?}", state.infrastructure[r].occupation, v);
+            //info!("Disallow {:?} {:?}", state.infrastructure[r].occupation, v);
             clause.push(!state.infrastructure[r].occupation.has_value(&v));
         }
     }
