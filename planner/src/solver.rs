@@ -585,9 +585,9 @@ pub(crate) fn mk_schedule(states :&[State], model :&Model) -> RoutePlan {
     }).collect()
 }
 
-pub(crate) fn end_state_condition(trains :&HashMap<TrainId, TrainsState>) -> Vec<Bool> {
+pub(crate) fn end_state_condition<'a>(trains :impl IntoIterator<Item = (&'a TrainId,&'a TrainsState)>) -> Vec<Bool> {
     let mut condition = Vec::new();
-    for (_,ts) in trains.iter() {
+    for (_,ts) in trains.into_iter() {
         condition.push(ts.born_before);
         for v in &ts.visit_before { condition.push(*v); }
         for (_,v) in &ts.progress_before { condition.push(*v); }

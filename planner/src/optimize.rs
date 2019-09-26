@@ -72,6 +72,7 @@ impl SignalOptimizer {
         'next: loop {
             let all_end_state_conditions = self.states.iter()
                 .flat_map(|i| i.last().unwrap().trains.clone()) 
+                // TODO is this wrong when n_usages > 1 ??
                 .collect::<HashMap<TrainId, TrainsState>>();
 
             let assumption = self.solver.and_literal(end_state_condition(&all_end_state_conditions));

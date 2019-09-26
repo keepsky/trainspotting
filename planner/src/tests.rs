@@ -1,10 +1,8 @@
+use maplit::*;
 use crate::*;
+use crate::input::*;
 
-#[test]
-fn test_basic() {
-    use maplit::*;
-    use crate::input::*;
-
+fn trivial_model() -> (Infrastructure, Usage) {
     let inf = Infrastructure {
         partial_routes: hashmap!{
             (0,0) => PartialRoute {
@@ -23,12 +21,49 @@ fn test_basic() {
         train_ord: vec![]
     };
 
+    (inf,trains)
+}
+
+#[test]
+fn test_basic() {
+
+    let (inf,trains) = trivial_model();
+
     let plan = solver::plan(&Config { n_before: 1, n_after: 0, exact_n :None, optimize_signals: false },
                  &inf, &trains, |_| true).unwrap();
 
     assert_eq!(plan.len(), 1); // one step
     assert_eq!(plan[0].len(), 1);  // one partial route in the infrastructure
     assert_eq!(plan[0][0], ((0,0), Some(0)));  // the train takes this route
+}
+
+#[test]
+fn too_many_states() {
+    // it should be allowed to have empty states at the end of the state list
+
+    use crate::solver::{ mk_state, mk_schedule, end_state_condition, disallow_schedule };
+
+    let (inf,trains) = trivial_model();
+
+    let mut s = minisat::Solver::new();
+    let s1 = mk_state(&mut s, None,      &inf, &trains, None);
+    let s2 = mk_state(&mut s, Some(&s1), &inf, &trains, None);
+    let states = vec![s1,s2];
+
+    let model = s.solve_under_assumptions(end_state_condition(&states.last().unwrap().trains)).unwrap();
+    let plan = mk_schedule(&states, &model);
+
+    assert_eq!(plan.len(), 2); // two steps
+    assert_eq!(plan[0].len(), 1);  // one partial route in the infrastructure
+    assert_eq!(plan[0][0], ((0,0), Some(0)));  // the train takes this route
+    assert_eq!(plan[1][0], ((0,0), None));  // the second state is just empty
+
+    assert_eq!(plan, vec![vec![((0,0), Some(0))],vec![((0,0), None)]]);
+
+    disallow_schedule(&mut s, vec![], &states, &plan);
+    let other_solution = s.solve_under_assumptions(end_state_condition(&states.last().unwrap().trains));
+    assert!(other_solution.is_err());
+
 }
 
 #[test]
