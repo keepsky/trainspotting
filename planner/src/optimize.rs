@@ -24,7 +24,9 @@ impl SignalOptimizer {
         let all_signals = inf.partial_routes.iter()
             .flat_map(|(_,r)| once(r.entry).chain(once(r.exit)))
             .filter(|e| match e {
-                SignalId::Signal(_) | SignalId::Detector(_) => true,
+                // TODO removed detectors here, for now.
+                //SignalId::Signal(_) | SignalId::Detector(_) => true,
+                SignalId::Signal(_) => true,
                 _ => false,
             }).collect::<HashSet<_>>();
         let active_signals :HashMap<SignalId,Bool>

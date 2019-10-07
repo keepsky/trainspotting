@@ -553,7 +553,7 @@ fn is_freeable_after(s :&mut Solver,
         for (next_route_id,next_route) in all_routes.iter().filter(|(_,r_next)| r_next.entry == r.exit) {
             let occupied = partial_routes[next_route_id].occupation.has_value(&Some(train_id));
 
-            let detector_works = active_signals.map(|m| m[&r.exit]).unwrap_or(true.into());
+            let detector_works = active_signals.and_then(|m| m.get(&r.exit)).cloned().unwrap_or(true.into());
             if next_route.length >= remaining_length {
                 alternatives.push(occupied);
             } else {
