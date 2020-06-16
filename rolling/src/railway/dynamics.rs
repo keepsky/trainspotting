@@ -196,6 +196,17 @@ pub fn dynamic_plan_step(train: &TrainParams,
         v: current_velocity,
     };
 
+    // If we are already violating the velocity constraint, we should be braking.
+    if current_velocity > profile.local_max_velocity {
+        // For how long do we need to brake?
+        // dt = dv / a
+        let dt = (profile.local_max_velocity - current_velocity) / train.max_brk;
+        return DriverPlan {
+            action: DriverAction::Brake,
+            dt: dt,
+        };
+    }
+
     // Acceleration is limited by current max speed
     accel_plans.push(plan_accel_v(p, profile.local_max_velocity, train.max_acc));
 
