@@ -200,7 +200,17 @@ pub fn dynamic_plan_step(train: &TrainParams,
     if current_velocity > profile.local_max_velocity {
         // For how long do we need to brake?
         // dt = dv / a
-        let dt = (current_velocity - profile.local_max_velocity) / train.max_brk;
+        let mut dt = (current_velocity - profile.local_max_velocity) / train.max_brk;
+
+        // However, we should not exceed max_dist while braking.
+        if current_velocity*current_velocity > 2.0*train.max_brk*max_dist {
+            let v = (2.0*-train.max_brk*max_dist + current_velocity * current_velocity).sqrt();
+            let dt_v = (v - current_velocity) / (-train.max_brk);
+            if dt_v < dt {
+                dt = dt_v;
+            }
+        }
+
         // Prevent very small breaking time steps:
         if dt > 1e-5 {
             return DriverPlan {
