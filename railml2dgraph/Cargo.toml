@@ -5,8 +5,8 @@ authors = ["Bjørnar Luteberget <luteberget@gmail.com>"]
 
 [dependencies]
 quick-xml = "*"
-minidom = "*"
-clap = "*"
+minidom = "0.11"
+clap = "2.31"
 petgraph="*"
 
 [lib]

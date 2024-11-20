@@ -6,7 +6,7 @@ import Data.Void
 import Text.Megaparsec
 import qualified Text.Megaparsec as MP
 import Text.Megaparsec.Char
-import Text.Megaparsec.Expr
+-- import Text.Megaparsec.Expr
 import qualified Text.Megaparsec.Char.Lexer as L
 
 import TrainPlan.Routes
@@ -28,12 +28,12 @@ parseUsageFile fn = do
 
 parseRoutes :: String -> String -> Either String [Route]
 parseRoutes name contents = case MP.parse (sc >> some route <* eof) name contents of
-  (Left err) -> Left $ parseErrorPretty err
+  (Left err) -> Left $ errorBundlePretty err
   (Right routes) -> Right $ routes
 
 parseUsage :: String -> String -> Either String UsagePattern
 parseUsage name contents = case MP.parse (sc >> some usageStatement <* eof) name contents of
-  (Left err) -> Left $ parseErrorPretty err
+  (Left err) -> Left $ errorBundlePretty err
   (Right stmts) -> Right $ usageToStructured stmts
 
 usageToStructured :: [UsageStatement] -> UsagePattern

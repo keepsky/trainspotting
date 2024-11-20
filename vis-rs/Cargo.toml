@@ -4,16 +4,16 @@ version = "0.1.0"
 authors = ["Bjørnar Luteberget <luteberget@gmail.com>"]
 
 [dependencies]
-clap = "*"
+clap = "2.31"
 failure = "*"
 failure_derive = "*"
-z3 = "*"
+z3 = "0.3"
 rolling = {path = "../rolling" }
 serde_json = "*"
-svg = "*"
+svg = "0.9"
 diffsolver = { path = "../diffsolver" }
 itertools="*"
-lp-modeler ="*"
+lp-modeler ="0.3"
 disjoint-sets = "*"
 ordered-float = "*"
 

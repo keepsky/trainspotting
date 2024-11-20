@@ -63,7 +63,7 @@ fn mk_pos(nodes :&[usize], edges: &[(PortRef,PortRef,Vec<(usize,usize,f64)>)], g
 pub type OrigEdges = HashMap<((String, Port),(String,Port)),Vec<(String,String,f64)>>;
 pub type PosRange = HashMap<((String, Port), (String, Port)), ((f64),(f64))>;
 
-pub fn convert(x :&StaticInfrastructure) -> Result<(String,OrigEdges,PosRange), Error> {
+pub fn convert(x :&StaticInfrastructure, names :&InfNames<String>) -> Result<(String,OrigEdges,PosRange), Error> {
     use std::fmt::Write;
 
     let mut output = String::new();
@@ -83,7 +83,7 @@ pub fn convert(x :&StaticInfrastructure) -> Result<(String,OrigEdges,PosRange), 
     let (nodes,edges) = major(&gnode,&x)?;
     let pos = mk_pos(&nodes, &edges, &gnode)?;
 
-    let lookup_names = x.node_names.iter().map(|(k,v)| (*v,k.clone())).collect::<HashMap<usize,String>>();
+    let lookup_names = names.node_names.iter().map(|(k,v)| (*v,k.clone())).collect::<HashMap<usize,String>>();
 
     for i in nodes  {
         let name = &lookup_names[&i];

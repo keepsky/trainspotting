@@ -35,7 +35,12 @@ pub struct Schematic {
 
 use rolling::input::staticinfrastructure::*;
 pub fn convert_dgraph(inf :&StaticInfrastructure) -> Result<Schematic, String> {
-    let (visgraph_str, original_edges, pos_range) = convert::convert(inf).map_err(|e| format!("{:?}", e))?;
+    let names = InfNames {
+        node_names: inf.nodes.iter().enumerate().map(|(i,_)| (format!("node_{}",i),i )).collect(),
+        object_names: inf.objects.iter().enumerate().map(|(i,_)| (format!("obj_{}",i),i )).collect(),
+    };
+
+    let (visgraph_str, original_edges, pos_range) = convert::convert(inf, &names).map_err(|e| format!("{:?}", e))?;
     let stmts = parser::read_string(&visgraph_str).map_err(|e| format!("{:?}", e))?;
     let (solver_input, node_names) = solver::convert(stmts)?;
     let (result, portref_changes) = solver::solve_difftheory(solver_input)?;
