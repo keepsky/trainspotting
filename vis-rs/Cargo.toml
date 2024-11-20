@@ -5,17 +5,17 @@ authors = ["Bjørnar Luteberget <luteberget@gmail.com>"]
 
 [dependencies]
 clap = "2.31"
-failure = "*"
-failure_derive = "*"
+failure = "0.1"
+failure_derive = "0.1"
 z3 = "0.3"
 rolling = {path = "../rolling" }
-serde_json = "*"
+serde_json = "1.0"
 svg = "0.9"
 diffsolver = { path = "../diffsolver" }
-itertools="*"
+itertools="0.8"
 lp-modeler ="0.3"
-disjoint-sets = "*"
-ordered-float = "*"
+disjoint-sets = "0.4"
+ordered-float = "4.5"
 
 [lib]
 crate-type=["rlib","staticlib"]

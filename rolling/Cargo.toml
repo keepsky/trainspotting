@@ -4,12 +4,12 @@ version = "0.2.0"
 authors = ["Bjørnar Luteberget <luteberget@gmail.com>"]
 
 [dependencies]
-ordered-float="*"
-smallvec="*"
-regex="*"
-structopt="*"
-failure="*"
-failure_derive="*"
+ordered-float="4.5"
+smallvec="1.13"
+regex="1.11"
+structopt="0.3"
+failure = "0.1"
+failure_derive="0.1"
 log = "0.4"
 
 

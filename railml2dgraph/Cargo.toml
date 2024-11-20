@@ -4,10 +4,10 @@ version = "0.1.0"
 authors = ["Bjørnar Luteberget <luteberget@gmail.com>"]
 
 [dependencies]
-quick-xml = "*"
+quick-xml = "0.37"
 minidom = "0.11"
 clap = "2.31"
-petgraph="*"
+petgraph="0.6"
 
 [lib]
 crate-type=["rlib","staticlib"]
