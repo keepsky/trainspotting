@@ -21,15 +21,26 @@ fn infrastructure_objects(inf :&StaticInfrastructure, sections: &HashMap<String,
     let mut i = 0;
     let mut j = &mut i;
     let mut fresh = move || { *j += 1; format!("unnamed{}",j) };
-
     let mut v = json!({});
+
+    // <-- keepsky
+    let lookup_node_names = inf.nodes.iter().enumerate().map(|(k,v)| (v.other_node.to_string(), k)).collect::<HashMap<String,usize>>();
+    // let lookup_object_names = inf.objects.iter().enumerate().map(|(k,v)| (v.other_node.to_string(), k)).collect::<HashMap<String,usize>>();
+    // keepsky -->
+
+
     for (node_idx,node) in inf.nodes.iter().enumerate() {
         for obj in &node.objects {
             println!("OBJECT({}) {:?}", obj,inf.objects[*obj]);
             use rolling::input::staticinfrastructure::StaticObject;
-            let mut data = json!({"node": get(&inf.node_names, node_idx).unwrap()});
+
+            // <-- keepsky
+            // let mut data = json!({"node": get(&inf.node_names, node_idx).unwrap()});
+            let mut data = json!({"node": get(&lookup_node_names, node_idx).unwrap()});
+            // keepsky -->
+
             match inf.objects[*obj] {
-                StaticObject::Signal => {
+                StaticObject::Signal { .. } => {  // keepsky
                     data.as_object_mut().unwrap().insert(format!("type"),json!("signal"));
                 },
                 StaticObject::TVDLimit { .. } => {
@@ -38,8 +49,11 @@ fn infrastructure_objects(inf :&StaticInfrastructure, sections: &HashMap<String,
                 StaticObject::Sight { distance, signal } => {
                     data.as_object_mut().unwrap().insert(format!("type"),json!("sight"));
                     data.as_object_mut().unwrap().insert(format!("distance"),json!(distance));
-                    data.as_object_mut().unwrap().insert(format!("signal"),json!(get(&inf.object_names, signal).unwrap()));
-                },
+                    // <-- keepsky
+                    // data.as_object_mut().unwrap().insert(format!("signal"),json!(get(&inf.object_names, signal).unwrap()));
+                    data.as_object_mut().unwrap().insert(format!("signal"),json!(get(&lookup_node_names, signal).unwrap()));
+                    // keepsky -->
+        },
                 StaticObject::Switch { branch_side, .. } => {
                     data.as_object_mut().unwrap().insert(format!("type"),json!("switch"));
                     data.as_object_mut().unwrap().insert(format!("side"),
@@ -51,7 +65,10 @@ fn infrastructure_objects(inf :&StaticInfrastructure, sections: &HashMap<String,
                 _ => { continue; },
             }
 
-            v.as_object_mut().unwrap().insert(get(&inf.object_names,*obj).map(|x| x.to_string()).unwrap_or_else(|| fresh()), data);
+            // <-- keepsky
+            // v.as_object_mut().unwrap().insert(get(&inf.object_names,*obj).map(|x| x.to_string()).unwrap_or_else(|| fresh()), data);
+            v.as_object_mut().unwrap().insert(get(&lookup_node_names,*obj).map(|x| x.to_string()).unwrap_or_else(|| fresh()), data);
+            // keepsky -->
         }
     }
 
@@ -61,10 +78,17 @@ fn infrastructure_objects(inf :&StaticInfrastructure, sections: &HashMap<String,
         match obj {
             StaticObject::TVDSection => {
                 data.as_object_mut().unwrap().insert(format!("type"),json!("tvdsection"));
-                let name = get(&inf.object_names,i).unwrap();
+                // <-- keepsky
+                // let name = get(&inf.object_names,i).unwrap();
+                let name = get(&lookup_node_names,i).unwrap();
+                // keepsky -->
+
                 let edges :Vec<_>= sections[name].iter().map(|(a,b)| format!("{}-{}",a,b)).collect();
                 data.as_object_mut().unwrap().insert(format!("edges"), json!(edges));
-                v.as_object_mut().unwrap().insert(get(&inf.object_names,i).map(|x| x.to_string()).unwrap_or_else(|| fresh()), data);
+                // <-- keepsky
+                // v.as_object_mut().unwrap().insert(get(&inf.object_names,i).map(|x| x.to_string()).unwrap_or_else(|| fresh()), data);
+                v.as_object_mut().unwrap().insert(get(&lookup_node_names,i).map(|x| x.to_string()).unwrap_or_else(|| fresh()), data);
+                // keepsky -->
             }
             _ => {},
         }

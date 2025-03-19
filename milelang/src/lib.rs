@@ -40,5 +40,7 @@ pub fn convert_dgraph(s :&str) -> Result<(StaticInfrastructure, HashMap<String,V
 
     // Parse string to dgraph infrastructure model
     let inf = rolling::get_infrastructure_string(&s).map_err(|e| format!("{:?}",e))?;
-    Ok((inf,detectionsection_edges))
+    // Ok((inf,detectionsection_edges)) // keepsky 
+    let inf2 = (inf.0, detectionsection_edges);
+    Ok(inf2)
 }

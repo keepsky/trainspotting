@@ -83,8 +83,9 @@ fn main() {
         if let Some(filename) = infrastructure_filename {
             if verbose { println!("Converting d-graph \"{}\".",filename); }
             let (inf, names) = rolling::get_infrastructure(&std::path::Path::new(filename)).expect("Infrastructure parser failed");
+            // let (c,oe,pos) = convert::convert(&inf, &names).expect("D-graph conversion failed");
+            // logicarl
             let (c,oe,pos) = convert::convert(&inf, &names).expect("D-graph conversion failed");
-
             if let Some(file) = outgraph_filename {
                 use std::fs::File;
                 use std::io::BufWriter;

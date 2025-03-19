@@ -7,7 +7,7 @@ authors = ["Bjørnar Luteberget <luteberget@gmail.com>"]
 webbrowser="*"
 serde_json = "*"
 ws = "*"
-notify = "*"
+notify = "3.0"
 milelang = { path = "../milelang" }
 vis_rs = { path = "../vis-rs" }
 rolling = { path = "../rolling" }

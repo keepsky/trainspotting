@@ -83,8 +83,11 @@ pub fn convert(x :&StaticInfrastructure, names :&InfNames<String>) -> Result<(St
     let (nodes,edges) = major(&gnode,&x)?;
     let pos = mk_pos(&nodes, &edges, &gnode)?;
 
-    let lookup_names = names.node_names.iter().map(|(k,v)| (*v,k.clone())).collect::<HashMap<usize,String>>();
-
+    // <-- keepsky
+    // let lookup_names = names.node_names.iter().map(|(k,v)| (*v,k.clone())).collect::<HashMap<usize,String>>();
+    // logicarl
+    let lookup_names = x.nodes.iter().enumerate().map(|(k,v)| (k, v.other_node.to_string())).collect::<HashMap<usize,String>>();
+    // keepsky -->    
     for i in nodes  {
         let name = &lookup_names[&i];
         let typ_ = match gnode.nodes[&i] {
